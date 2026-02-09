@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
   createShortUrl,
-} from "../controllers/url.controller.js";
+} from "../controllers/url.controller.ts";
 
 const urlRouter = Router();
 

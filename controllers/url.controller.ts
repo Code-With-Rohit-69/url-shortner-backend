@@ -1,7 +1,9 @@
-import Url from "../models/url.model.js";
-import { generateShortUrl } from "../utils/generateShortUrl.js";
+import { generateShortUrl } from "../utils/generateShortUrl.ts";
+import Url from "../models/url.model.ts";
+import type { UrlDocument } from "../models/url.model.ts";
+import type { Request, Response } from "express";
 
-const isValidUrl = (url) => {
+const isValidUrl = (url: string): boolean => {
   try {
     new URL(url);
     return true;
@@ -10,7 +12,7 @@ const isValidUrl = (url) => {
   }
 };
 
-const createShortUrl = async (req, res) => {
+const createShortUrl = async (req: Request, res: Response) => {
   const { url } = req.body;
   try {
     if (url.trim().length == 0 || !isValidUrl(url)) {
@@ -29,9 +31,9 @@ const createShortUrl = async (req, res) => {
       });
     }
 
-    let shortCode;
-    let saved = false;
-    let newUrl;
+    let shortCode: string = "";
+    let saved: boolean = false;
+    let newUrl: UrlDocument | null = null;
 
     for (let i = 0; i < 5 && !saved; i++) {
       shortCode = generateShortUrl();
@@ -42,12 +44,14 @@ const createShortUrl = async (req, res) => {
           shortCode,
         });
         saved = true;
-      } catch (err) {
-        if (err.code !== 11000) throw err;
+      } catch (err: unknown) {
+        if ((err as any).code !== 11000) {
+          throw err;
+        }
       }
     }
 
-    if (!saved) {
+    if (!saved || !newUrl) {
       return res
         .status(500)
         .json({ success: false, message: "Could not generate unique code" });
@@ -57,15 +61,15 @@ const createShortUrl = async (req, res) => {
       success: true,
       shortCode: newUrl.shortCode,
     });
-  } catch (error) {
-    console.log("Error in createShortUrl controller " + error.message);
+  } catch (error: unknown) {
+    console.log("Error in createShortUrl controller", error);
     return res
       .status(500)
       .json({ message: "Internal Server Error.", success: false });
   }
 };
 
-const redirectShortUrl = async (req, res) => {
+const redirectShortUrl = async (req: Request, res: Response) => {
   const { shortCode } = req.params;
 
   try {
@@ -82,8 +86,8 @@ const redirectShortUrl = async (req, res) => {
     await url.save();
 
     return res.redirect(url.originalUrl);
-  } catch (error) {
-    console.log("Error in redirectShortUrl controller " + error.message);
+  } catch (error: unknown) {
+    console.log("Error in redirectShortUrl controller " + error);
     return res
       .status(500)
       .json({ message: "Internal Server Error.", success: false });
